@@ -1,4 +1,0 @@
-[line1] test init tailfile
-[line2] testtest
-[line3] test kafka send msg
-[test kafka consumer]: ./kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic my-topic

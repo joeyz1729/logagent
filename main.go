@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/IBM/sarama"
 	"github.com/sirupsen/logrus"
 	"strings"
 	"time"
@@ -24,9 +23,9 @@ func run() (err error) {
 			time.Sleep(time.Second)
 			continue
 		}
-		msg := &sarama.ProducerMessage{
+		msg := &kafka.Message{
 			Topic: "web_log",
-			Value: sarama.StringEncoder(line.Text),
+			Data:  line.Text,
 		}
 		logrus.Info("msg: ", line.Text)
 		kafka.MsgChan <- msg
