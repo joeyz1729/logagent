@@ -8,7 +8,7 @@ import (
 
 var (
 	localIP string
-	obj     *tail.Tail
+	TailObj *tail.Tail
 )
 
 type LogData struct {
@@ -32,7 +32,7 @@ func Init(filename string) (err error) {
 		Location: &tail.SeekInfo{Offset: 0, Whence: 2},
 		Poll:     true,
 	}
-	obj, err = tail.TailFile(filename, cfg)
+	TailObj, err = tail.TailFile(filename, cfg)
 	if err != nil {
 		logrus.Error("tailfile: create tailObj for path:%s failed, err: %v\n", filename, err)
 		return

@@ -2,58 +2,43 @@ package main
 
 import (
 	"fmt"
-	"github.com/go-ini/ini"
+	"github.com/IBM/sarama"
 	"github.com/sirupsen/logrus"
 	"strings"
-	"sync"
+	"time"
 	logger "zouyi/logagent/Logger"
-	"zouyi/logagent/common"
 	"zouyi/logagent/kafka"
+	"zouyi/logagent/setting"
 	"zouyi/logagent/tailfile"
 )
 
-var (
-	log *logrus.Logger
-	wg  sync.WaitGroup
-)
+//func run(logConfKey string, sysInfoConf *common.CollectSysInfoConfig) {
+//
+//}
 
-type Config struct {
-	KafkaConfig   `ini:"kafka"`
-	CollectConfig `ini:"collect"`
-	EtcdConfig    `ini:"etcd"`
-}
-
-type KafkaConfig struct {
-	Address  string `ini:"address"`
-	ChanSize int    `ini:"chan_size"`
-}
-
-type CollectConfig struct {
-	Logfile string `ini:"logfile"`
-}
-
-type EtcdConfig struct {
-	Address           string `ini:"address"`
-	CollectLogKey     string `ini:"collect_log_key"`
-	CollectSysInfoKey string `ini:"collect_sysinfo_key"`
-}
-
-func run(logConfKey string, sysInfoConf *common.CollectSysInfoConfig) {
-
+func run() (err error) {
+	for {
+		line, ok := <-tailfile.TailObj.Lines
+		if !ok {
+			logrus.Warningf("tail file close reopen, filename: %s\n", tailfile.TailObj.Filename)
+			time.Sleep(time.Second)
+			continue
+		}
+		msg := &sarama.ProducerMessage{
+			Topic: "web_log",
+			Value: sarama.StringEncoder(line.Text),
+		}
+		logrus.Info("msg: ", line.Text)
+		kafka.MsgChan <- msg
+	}
 }
 
 func main() {
 	logger.Init()
-
-	var cfg Config
-	// 1. cfg
-	err := ini.MapTo(&cfg, "./conf/config.ini")
-	if err != nil {
-		panic(fmt.Sprintf("init config failed, err:%v", err))
-	}
+	err := setting.Init()
 
 	// 2. kafka
-	err = kafka.Init(strings.Split(cfg.KafkaConfig.Address, ","), cfg.KafkaConfig.ChanSize)
+	err = kafka.Init(strings.Split(setting.Cfg.KafkaConfig.Address, ","), setting.Cfg.KafkaConfig.ChanSize)
 	if err != nil {
 		panic(fmt.Sprintf("init kafka failed, err:%v", err))
 	}
@@ -61,7 +46,11 @@ func main() {
 	// 3. etcd
 
 	// 4. tail
-	err = tailfile.Init(cfg.CollectConfig.Logfile)
+	err = tailfile.Init(setting.Cfg.CollectConfig.Logfile)
 	logrus.Info("init tailfile success")
 
+	err = run()
+	if err != nil {
+		return
+	}
 }

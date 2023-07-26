@@ -7,7 +7,7 @@ import (
 
 var (
 	client  sarama.SyncProducer
-	msgChan chan *Message
+	MsgChan chan *sarama.ProducerMessage
 	log     *logrus.Logger
 )
 
@@ -28,14 +28,26 @@ func Init(addrs []string, chanSize int) (err error) {
 		return err
 	}
 
-	msgChan = make(chan *Message, chanSize)
+	MsgChan = make(chan *sarama.ProducerMessage, chanSize)
+
 	go sendKafka()
 
 	return
 }
 
 func sendKafka() {
-
+	for {
+		select {
+		case msg := <-MsgChan:
+			pid, offset, err := client.SendMessage(msg)
+			if err != nil {
+				logrus.Warning("send msg failed, err: ", err)
+				return
+			}
+			logrus.Infof("send msg to kafka success, pid: %v offset: %v", pid, offset)
+		}
+	}
+	return
 }
 
 func SendLog(msg *Message) (err error) {
