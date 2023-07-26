@@ -75,26 +75,34 @@ func NewTask(ce common.CollectEntry) (task *Task, err error) {
 }
 
 func run(t *Task) (err error) {
+	logrus.Debugf("begin task [path:%s topic:%s] stop\n", t.path, t.topic)
 	for {
-		line, ok := <-t.instance.Lines
-		if !ok {
-			logrus.Warningf("tail file close reopen, filename: %s\n", t.instance.Filename)
-			time.Sleep(time.Second)
-			continue
+		select {
+		case <-t.ctx.Done():
+			logrus.Warnf("the task [path:%s topic:%s] stop", t.path, t.topic)
+			t.instance.Cleanup()
+			return
+		case line, ok := <-t.instance.Lines:
+			if !ok {
+				logrus.Errorf("task [path:%s topic:%s] read line failed", t.path, t.topic)
+				time.Sleep(time.Second)
+				continue
+			}
+			if len(line.Text) == 0 {
+				logrus.Warn("line does not contain data, skip")
+				continue
+			}
+			// 读取到日志中创建的非空行，创建msg并发送给kafka
+			msg := &kafka.Message{
+				Topic: t.topic,
+				Data:  line.Text,
+			}
+			logrus.Debug("msg: ", line.Text)
+			if err = kafka.SendLog(msg); err != nil {
+				logrus.Warning("msgChan is full")
+				continue
+			}
 		}
-		if len(line.Text) == 0 {
-			logrus.Warn("line does not contain data, skip")
-			continue
-		}
-		// 读取到日志中创建的非空行，创建msg并发送给kafka
-		msg := &kafka.Message{
-			Topic: t.topic,
-			Data:  line.Text,
-		}
-		logrus.Debug("msg: ", line.Text)
-		if err = kafka.SendLog(msg); err != nil {
-			logrus.Warning("msgChan is full")
-			continue
-		}
+		logrus.Debug("send msg to kafka success")
 	}
 }

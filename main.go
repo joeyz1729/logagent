@@ -49,5 +49,11 @@ func main() {
 	if err != nil {
 		panic(fmt.Sprintf("init tailfile failed, err:%v", err))
 	}
+	run()
+}
 
+func run() {
+	for {
+		select {}
+	}
 }

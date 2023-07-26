@@ -6,17 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="d23af476-43d6-4748-9a46-d3934f52385f" name="更改" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/common/common.go" beforeDir="false" afterPath="$PROJECT_DIR$/common/common.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/conf/config.ini" beforeDir="false" afterPath="$PROJECT_DIR$/conf/config.ini" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/etcd/etcd.go" beforeDir="false" afterPath="$PROJECT_DIR$/etcd/etcd.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kafka/consumerExample/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/kafka/consumerExample/main.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kafka/kafka.go" beforeDir="false" afterPath="$PROJECT_DIR$/kafka/kafka.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/setting/setting.go" beforeDir="false" afterPath="$PROJECT_DIR$/setting/setting.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tailfile/tailfile.go" beforeDir="false" afterPath="$PROJECT_DIR$/tailfile/tailfile.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tmp/s1.log" beforeDir="false" afterPath="$PROJECT_DIR$/tmp/s1.log" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
