@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/IBM/sarama"
 	"github.com/sirupsen/logrus"
+	"strings"
+	"zouyi/logagent/setting"
 )
 
 var (
@@ -18,7 +20,8 @@ type Message struct {
 	Data  string
 }
 
-func Init(addrs []string, chanSize int) (err error) {
+func Init() (err error) {
+	addrs, chanSize := strings.Split(setting.Cfg.KafkaConfig.Address, ","), setting.Cfg.KafkaConfig.ChanSize
 	config := sarama.NewConfig()
 	config.Producer.RequiredAcks = sarama.WaitForAll
 	config.Producer.Partitioner = sarama.NewRandomPartitioner
@@ -33,7 +36,7 @@ func Init(addrs []string, chanSize int) (err error) {
 	msgChan = make(chan *Message, chanSize)
 
 	go sendKafka()
-
+	logrus.Info("init kafka success")
 	return
 }
 

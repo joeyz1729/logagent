@@ -7,9 +7,9 @@ import (
 )
 
 type Config struct {
-	KafkaConfig   `ini:"kafka"`
-	CollectConfig `ini:"collect"`
-	EtcdConfig    `ini:"etcd"`
+	KafkaConfig `ini:"kafka"`
+	//CollectConfig `ini:"collect"`
+	EtcdConfig `ini:"etcd"`
 }
 
 type KafkaConfig struct {
@@ -17,9 +17,10 @@ type KafkaConfig struct {
 	ChanSize int    `ini:"chan_size"`
 }
 
-type CollectConfig struct {
-	Logfile string `ini:"logfile"`
-}
+//type CollectConfig struct {
+//	Logfile string `ini:"logfile"`
+//	// TODO
+//}
 
 type EtcdConfig struct {
 	Address           string `ini:"address"`

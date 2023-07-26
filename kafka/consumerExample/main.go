@@ -10,10 +10,10 @@ func main() {
 	// 创建consumer
 	consumer, err := sarama.NewConsumer([]string{"127.0.0.1:9092"}, nil)
 	if err != nil {
-		fmt.Printf("fail to start consumer, err: %v\n", err)
+		fmt.Printf("fail to start consumerExample, err: %v\n", err)
 		return
 	}
-	fmt.Println("start consumer success")
+	fmt.Println("start consumerExample success")
 
 	// 返回给定主题的所有分区列表
 	partitionList, err := consumer.Partitions("web_log")
@@ -30,7 +30,7 @@ func main() {
 		// 每个分区创建PartitionConsumer
 		pc, err := consumer.ConsumePartition("web_log", int32(partition), sarama.OffsetNewest)
 		if err != nil {
-			fmt.Printf("failed to start consumer for partition %d, err: %v\n", partition, err)
+			fmt.Printf("failed to start consumerExample for partition %d, err: %v\n", partition, err)
 			return
 		}
 		defer pc.AsyncClose()

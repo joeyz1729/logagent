@@ -4,11 +4,20 @@ import (
 	"context"
 	"github.com/hpcloud/tail"
 	"github.com/sirupsen/logrus"
+	"time"
+	"zouyi/logagent/common"
+	"zouyi/logagent/kafka"
 )
 
 var (
 	localIP string
-	TailObj *tail.Tail
+	cfg     = tail.Config{
+		ReOpen:    true,
+		Follow:    true,
+		Location:  &tail.SeekInfo{Offset: 0, Whence: 2},
+		MustExist: false,
+		Poll:      true,
+	}
 )
 
 type LogData struct {
@@ -16,28 +25,28 @@ type LogData struct {
 	Data string `json:"data"`
 }
 
-type tailObj struct {
-	path     string
-	module   string
+type Task struct {
+	path string
+	//module   string
 	topic    string
 	instance *tail.Tail
 	ctx      context.Context
 	cancel   context.CancelFunc
 }
 
-func Init(filename string) (err error) {
-	cfg := tail.Config{
-		ReOpen:   true,
-		Follow:   true,
-		Location: &tail.SeekInfo{Offset: 0, Whence: 2},
-		Poll:     true,
+func Init(collectEntries []common.CollectEntry) (err error) {
+
+	for _, ce := range collectEntries {
+		task, err := NewTask(ce)
+		if err != nil {
+			logrus.Errorf("tailfile: create new task path:%s topic: %s failed, err: %v\n", ce.Path, ce.Topic, err)
+			// TODO
+			return err
+		}
+		go run(task)
 	}
-	TailObj, err = tail.TailFile(filename, cfg)
-	if err != nil {
-		logrus.Error("tailfile: create tailObj for path:%s failed, err: %v\n", filename, err)
-		return
-	}
-	return
+	logrus.Info("tailfile init tasks success")
+	return nil
 }
 
 //func Init() {
@@ -49,63 +58,43 @@ func Init(filename string) (err error) {
 //	}
 //}
 
-//
-//func NewTailObj(path, module, topic string) (tObj *tailObj, err error) {
-//	tObj = &tailObj{
-//		path:   path,
-//		module: module,
-//		topic:  topic,
-//	}
-//	ctx, cancel := context.WithCancel(context.Background())
-//	tObj.ctx = ctx
-//	tObj.cancel = cancel
-//	err = tObj.Init()
-//	return
-//}
-//
-//func (t *tailObj) Init() (err error) {
-//	t.instance, err = tail.TailFile(t.path, tail.Config{
-//		ReOpen:   true,
-//		Follow:   true,
-//		Location: &tail.SeekInfo{Offset: 0, Whence: 2},
-//		Poll:     true,
-//	})
-//	if err != nil {
-//		fmt.Println("init tail failed, err:", err)
-//		return
-//	}
-//	return
-//}
-//
-//func (t *tailObj) run() {
-//	for {
-//		select {
-//		case <-t.ctx.Done():
-//			logrus.Warnf("the task of path:%s is stop...", t.path)
-//			t.instance.Cleanup()
-//			return
-//		case line, ok := <-t.instance.Lines:
-//			if !ok {
-//				logrus.Errorf("read line failed")
-//				continue
-//			}
-//			data := &LogData{
-//				IP:   localIP,
-//				Data: line.Text,
-//			}
-//			jsonData, err := json.Marshal(data)
-//			if err != nil {
-//				logrus.Warningf("marshal tailfile.LogData failled, err:%v", err)
-//			}
-//			msg := &kafka.Message{
-//				Data:  string(jsonData),
-//				Topic: t.topic,
-//			}
-//			err = kafka.SendLog(msg)
-//			if err != nil {
-//				logrus.Errorf("send to kafka failed, err:%v\n", err)
-//			}
-//		}
-//		logrus.Info("send msg to kafka success")
-//	}
-//}
+func NewTask(ce common.CollectEntry) (task *Task, err error) {
+	task = &Task{
+		path:  ce.Path,
+		topic: ce.Topic,
+	}
+	ins, err := tail.TailFile(ce.Path, cfg)
+	if err != nil {
+		return nil, err
+	}
+	task.instance = ins
+	ctx, cancel := context.WithCancel(context.Background())
+	task.ctx = ctx
+	task.cancel = cancel
+	return task, nil
+}
+
+func run(t *Task) (err error) {
+	for {
+		line, ok := <-t.instance.Lines
+		if !ok {
+			logrus.Warningf("tail file close reopen, filename: %s\n", t.instance.Filename)
+			time.Sleep(time.Second)
+			continue
+		}
+		if len(line.Text) == 0 {
+			logrus.Warn("line does not contain data, skip")
+			continue
+		}
+		// 读取到日志中创建的非空行，创建msg并发送给kafka
+		msg := &kafka.Message{
+			Topic: t.topic,
+			Data:  line.Text,
+		}
+		logrus.Debug("msg: ", line.Text)
+		if err = kafka.SendLog(msg); err != nil {
+			logrus.Warning("msgChan is full")
+			continue
+		}
+	}
+}

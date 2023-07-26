@@ -6,10 +6,11 @@ import (
 	"strings"
 )
 
+// CollectEntry 需要收集的日志信息
 type CollectEntry struct {
-	Path   string `json:"path"`
-	Module string `json:"module"`
-	Topic  string `json:"topic"`
+	Path string `json:"path"`
+	//Module string `json:"module"`
+	Topic string `json:"topic"`
 }
 
 type CollectSysInfoConfig struct {

@@ -1,8 +1,8 @@
 [line1] test init tailfile
-[line2] testtest
-[line3] test kafka send msg
+[line2] test kafka send msg
 [test kafka consumer]: ./kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic my-topic
 refactor(msg): 将message channel 修改为指定类型，发送给kafka时再包装为ProducerMessage
+refactor(sendMsg): 修改log channel
 test etcd
 test kafka consumer
 web_log partition consumer
