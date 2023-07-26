@@ -23,12 +23,19 @@ func run() (err error) {
 			time.Sleep(time.Second)
 			continue
 		}
+		if len(line.Text) == 0 {
+			logrus.Warn("line with no data, skip")
+			continue
+		}
 		msg := &kafka.Message{
 			Topic: "web_log",
 			Data:  line.Text,
 		}
-		logrus.Info("msg: ", line.Text)
-		kafka.MsgChan <- msg
+		logrus.Debug("msg: ", line.Text)
+		if err = kafka.SendLog(msg); err != nil {
+			logrus.Warning("msgChan is full")
+			continue
+		}
 	}
 }
 

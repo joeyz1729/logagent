@@ -1,13 +1,14 @@
 package kafka
 
 import (
+	"fmt"
 	"github.com/IBM/sarama"
 	"github.com/sirupsen/logrus"
 )
 
 var (
 	client  sarama.SyncProducer
-	MsgChan chan *Message
+	msgChan chan *Message
 	log     *logrus.Logger
 )
 
@@ -29,7 +30,7 @@ func Init(addrs []string, chanSize int) (err error) {
 		return err
 	}
 
-	MsgChan = make(chan *Message, chanSize)
+	msgChan = make(chan *Message, chanSize)
 
 	go sendKafka()
 
@@ -39,7 +40,7 @@ func Init(addrs []string, chanSize int) (err error) {
 func sendKafka() {
 	for {
 		select {
-		case msg := <-MsgChan:
+		case msg := <-msgChan:
 			producerMessage := &sarama.ProducerMessage{
 				Topic: msg.Topic,
 				Value: sarama.StringEncoder(msg.Data),
@@ -56,5 +57,10 @@ func sendKafka() {
 }
 
 func SendLog(msg *Message) (err error) {
+	select {
+	case msgChan <- msg:
+	default:
+		err = fmt.Errorf("msgChan is full")
+	}
 	return
 }
