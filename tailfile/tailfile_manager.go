@@ -72,6 +72,7 @@ func (m taskManager) watch() {
 				continue
 			}
 			m.Tasks[key].cancel()
+			m.Tasks[key].instance.Stop()
 			logrus.Debugf("task cancel [key:%s]", key)
 			delete(m.Tasks, key)
 		}

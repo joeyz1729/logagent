@@ -3,12 +3,17 @@ package main
 import (
 	"fmt"
 	"strings"
-	logger "zouyi/logagent/Logger"
+	"sync"
 	"zouyi/logagent/common"
 	"zouyi/logagent/etcd"
 	"zouyi/logagent/kafka"
+	"zouyi/logagent/logger"
 	"zouyi/logagent/setting"
 	"zouyi/logagent/tailfile"
+)
+
+var (
+	wg sync.WaitGroup
 )
 
 func main() {
@@ -33,19 +38,18 @@ func main() {
 	defer etcd.Close()
 
 	// 获取ip
-
 	if err = common.GetOutboundIP(); err != nil {
 		panic(fmt.Sprintf("get local ip failed, err:%v\n", err))
 	}
 	// 获取etcd日志配置的key
 	localLogKey := fmt.Sprintf(setting.Cfg.EtcdConfig.LogKey, common.LocalIp) // 根据每台服务器的主机来获取etcd中的日志path和topic
-	// 获取日志信息
+	// 获取日志并解析信息
 	collectEntries, err := etcd.GetCollectEntries(localLogKey)
 	if err != nil {
 		panic(fmt.Sprintf("get conf from etcd err: %v", err))
 	}
 	// etcd监控日志信息变动
-	go etcd.WatchEntries(localLogKey)
+	//go etcd.WatchEntries(localLogKey)
 	newEntryChan := etcd.WatchChan()
 
 	// 初始化日志跟踪task
@@ -55,11 +59,15 @@ func main() {
 	}
 
 	// 启动
-	run()
+	run(localLogKey)
 }
 
-func run() {
+func run(logKey string) {
 	for {
-		select {}
+
+		wg.Add(1)
+		go etcd.WatchEntries(logKey)
+		// TODO, 监控本机信息
+		wg.Wait()
 	}
 }

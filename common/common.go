@@ -19,6 +19,7 @@ type CollectSysInfoConfig struct {
 
 var LocalIp string
 
+// GetOutboundIP 测试本机网络连接并存储本机IP地址
 func GetOutboundIP() (err error) {
 	conn, err := net.Dial("udp", "8.8.8.8:80")
 	if err != nil {
@@ -26,7 +27,6 @@ func GetOutboundIP() (err error) {
 	}
 	defer conn.Close()
 	localAddr := conn.LocalAddr().(*net.UDPAddr)
-	//fmt.Println(localAddr.String())
 	LocalIp = strings.Split(localAddr.IP.String(), ":")[0]
 	return
 }
