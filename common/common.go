@@ -6,8 +6,8 @@ import (
 	"strings"
 )
 
-// CollectEntry 需要收集的日志信息
-type CollectEntry struct {
+// LogEntry 需要收集的日志信息
+type LogEntry struct {
 	Path string `json:"path"`
 	//Module string `json:"module"`
 	Topic string `json:"topic"`

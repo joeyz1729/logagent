@@ -9,6 +9,7 @@ import (
 type Config struct {
 	KafkaConfig `ini:"kafka"`
 	//CollectConfig `ini:"collect"`
+	TailConfig `ini:"tailfile"`
 	EtcdConfig `ini:"etcd"`
 }
 
@@ -22,10 +23,14 @@ type KafkaConfig struct {
 //	// TODO
 //}
 
+type TailConfig struct {
+	ChanSize int `ini:"chan_size"`
+}
+
 type EtcdConfig struct {
-	Address           string `ini:"address"`
-	CollectLogKey     string `ini:"collect_log_key"`
-	CollectSysInfoKey string `ini:"collect_sysinfo_key"`
+	Address    string `ini:"address"`
+	LogKey     string `ini:"log_key"`
+	SysInfoKey string `ini:"sysinfo_key"`
 }
 
 var Cfg Config

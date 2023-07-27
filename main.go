@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	logger "zouyi/logagent/Logger"
+	"zouyi/logagent/common"
 	"zouyi/logagent/etcd"
 	"zouyi/logagent/kafka"
 	"zouyi/logagent/setting"
@@ -14,8 +15,9 @@ func main() {
 	// 初始化日志设置
 	logger.Init()
 
+	var err error
 	// 初始化配置信息
-	err := setting.Init()
+	err = setting.Init()
 	if err != nil {
 		panic(fmt.Sprintf("init config failed, err:%v", err))
 	}
@@ -32,23 +34,28 @@ func main() {
 	}
 	defer etcd.Close()
 
-	// 从etcd中获取需要管理的日志信息
-	//ip, err := common.GetOutboundIP()
-	//if err != nil {
-	//	panic(fmt.Sprintf("get local ip failed, err:%v\n", err))
-	//}
-	//collectLogKey := fmt.Sprintf(setting.Cfg.EtcdConfig.CollectLogKey, ip)
-	// etcdctl put k1 '[{"path":"/tmp/log-agent/shopping.log","topic":"shopping"},{"path":"/tmp/log-agent/web.log","topic":"web"}]'
-	collectLogKey := "k1" // 根据每台服务器的主机来获取etcd中的日志path和topic
-	collectEntries, err := etcd.GetConf(collectLogKey)
+	// 获取ip
+	ip, err := common.GetOutboundIP()
+	if err != nil {
+		panic(fmt.Sprintf("get local ip failed, err:%v\n", err))
+	}
+	// 获取etcd日志配置的key
+	logKey := fmt.Sprintf(setting.Cfg.EtcdConfig.LogKey, ip) // 根据每台服务器的主机来获取etcd中的日志path和topic
+	// 获取日志信息
+	collectEntries, err := etcd.GetCollectEntries(logKey)
 	if err != nil {
 		panic(fmt.Sprintf("get conf from etcd err: %v", err))
 	}
+	// etcd监控日志信息变动
+	newEntryChan := etcd.WatchChan()
 
-	err = tailfile.Init(collectEntries)
+	// 初始化日志跟踪task
+	err = tailfile.Init(collectEntries, newEntryChan)
 	if err != nil {
 		panic(fmt.Sprintf("init tailfile failed, err:%v", err))
 	}
+
+	// 启动
 	run()
 }
 

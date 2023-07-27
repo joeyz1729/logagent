@@ -10,8 +10,8 @@ import (
 )
 
 var (
-	localIP string
-	cfg     = tail.Config{
+	//localIP string
+	cfg = tail.Config{
 		ReOpen:    true,
 		Follow:    true,
 		Location:  &tail.SeekInfo{Offset: 0, Whence: 2},
@@ -34,31 +34,7 @@ type Task struct {
 	cancel   context.CancelFunc
 }
 
-func Init(collectEntries []common.CollectEntry) (err error) {
-
-	for _, ce := range collectEntries {
-		task, err := NewTask(ce)
-		if err != nil {
-			logrus.Errorf("tailfile: create new task path:%s topic: %s failed, err: %v\n", ce.Path, ce.Topic, err)
-			// TODO
-			return err
-		}
-		go run(task)
-	}
-	logrus.Info("tailfile init tasks success")
-	return nil
-}
-
-//func Init() {
-//	logrus.Info("etcd:init log success")
-//	var err error
-//	localIP, err = common.GetOutboundIP()
-//	if err != nil {
-//		logrus.Errorf("get local ip failed, %v", err)
-//	}
-//}
-
-func NewTask(ce common.CollectEntry) (task *Task, err error) {
+func NewTask(ce common.LogEntry) (task *Task, err error) {
 	task = &Task{
 		path:  ce.Path,
 		topic: ce.Topic,
@@ -74,8 +50,8 @@ func NewTask(ce common.CollectEntry) (task *Task, err error) {
 	return task, nil
 }
 
-func run(t *Task) (err error) {
-	logrus.Debugf("begin task [path:%s topic:%s] stop\n", t.path, t.topic)
+func (t *Task) run() (err error) {
+	logrus.Debugf("begin task [path:%s topic:%s]\n", t.path, t.topic)
 	for {
 		select {
 		case <-t.ctx.Done():
@@ -89,7 +65,7 @@ func run(t *Task) (err error) {
 				continue
 			}
 			if len(line.Text) == 0 {
-				logrus.Warn("line does not contain data, skip")
+				logrus.Warnf("task [path:%s topic:%s] line does not contain data, skip", t.path, t.topic)
 				continue
 			}
 			// 读取到日志中创建的非空行，创建msg并发送给kafka
@@ -97,12 +73,12 @@ func run(t *Task) (err error) {
 				Topic: t.topic,
 				Data:  line.Text,
 			}
-			logrus.Debug("msg: ", line.Text)
+			logrus.Debugf("task [path:%s topic:%s] msg: %s", t.path, t.topic, line.Text)
 			if err = kafka.SendLog(msg); err != nil {
-				logrus.Warning("msgChan is full")
+				logrus.Warnf("task [path:%s topic:%s] msgChan is full", t.path, t.topic)
 				continue
 			}
 		}
-		logrus.Debug("send msg to kafka success")
+
 	}
 }
