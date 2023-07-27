@@ -17,36 +17,35 @@ func main() {
 
 	var err error
 	// 初始化配置信息
-	err = setting.Init()
-	if err != nil {
+	if err = setting.Init(); err != nil {
 		panic(fmt.Sprintf("init config failed, err:%v", err))
 	}
+
 	// 初始化kafka
-	err = kafka.Init()
-	if err != nil {
+	if err = kafka.Init(); err != nil {
 		panic(fmt.Sprintf("init kafka failed, err:%v", err))
 	}
 
 	// 连接到etcd
-	err = etcd.Init(strings.Split(setting.Cfg.EtcdConfig.Address, ","))
-	if err != nil {
+	if err = etcd.Init(strings.Split(setting.Cfg.EtcdConfig.Address, ",")); err != nil {
 		panic(fmt.Sprintf("init etcd failed, err:%v", err))
 	}
 	defer etcd.Close()
 
 	// 获取ip
-	ip, err := common.GetOutboundIP()
-	if err != nil {
+
+	if err = common.GetOutboundIP(); err != nil {
 		panic(fmt.Sprintf("get local ip failed, err:%v\n", err))
 	}
 	// 获取etcd日志配置的key
-	logKey := fmt.Sprintf(setting.Cfg.EtcdConfig.LogKey, ip) // 根据每台服务器的主机来获取etcd中的日志path和topic
+	localLogKey := fmt.Sprintf(setting.Cfg.EtcdConfig.LogKey, common.LocalIp) // 根据每台服务器的主机来获取etcd中的日志path和topic
 	// 获取日志信息
-	collectEntries, err := etcd.GetCollectEntries(logKey)
+	collectEntries, err := etcd.GetCollectEntries(localLogKey)
 	if err != nil {
 		panic(fmt.Sprintf("get conf from etcd err: %v", err))
 	}
 	// etcd监控日志信息变动
+	go etcd.WatchEntries(localLogKey)
 	newEntryChan := etcd.WatchChan()
 
 	// 初始化日志跟踪task

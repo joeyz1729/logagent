@@ -51,7 +51,7 @@ func NewTask(ce common.LogEntry) (task *Task, err error) {
 }
 
 func (t *Task) run() (err error) {
-	logrus.Debugf("begin task [path:%s topic:%s]\n", t.path, t.topic)
+	logrus.Debugf("[path:%s topic:%s] task begin \n", t.path, t.topic)
 	for {
 		select {
 		case <-t.ctx.Done():
